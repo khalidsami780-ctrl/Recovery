@@ -6,7 +6,7 @@ import Ring from '../components/Ring';
 import WorkoutModal from '../components/WorkoutModal';
 
 export default function Home() {
-  const { profile, log, addWater, toggleSupp, groomLog, groomStreak } = useStore();
+  const { profile, log = {}, addWater, toggleSupp, groomLog = {}, groomStreak = {}, setSleep } = useStore();
   const [showModal, setShowModal] = useState(false);
 
   const needs = profile ? calcNeeds(profile.weight, profile.height, profile.age, profile.goal) : null;
