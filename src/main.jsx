@@ -9,10 +9,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>,
 )
 
+// Service Worker registration with Base Path awareness
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    // Determine base for GitHub Pages or local
     const base = import.meta.env.BASE_URL;
-    navigator.serviceWorker.register(`${base}sw.js`)
-      .catch(err => console.log('SW register failed: ', err));
+    const swPath = `${base}sw.js`;
+    
+    navigator.serviceWorker.register(swPath)
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW register failed:', err));
   });
 }

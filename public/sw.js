@@ -1,11 +1,9 @@
-const CACHE_NAME = 'fitdodo-v3';
+const CACHE_NAME = 'fitdodo-v2';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/src/main.jsx',
-  '/src/App.jsx',
-  '/src/index.css'
+  '/sw.js'
 ];
 
 self.addEventListener('install', event => {
@@ -16,14 +14,16 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Never intercept API calls
+  // Never intercept API calls or cross-origin requests
   if (event.request.url.includes('api.anthropic.com')) return;
   
   event.respondWith(
     caches.match(event.request)
       .then(response => {
         if (response) return response;
-        return fetch(event.request);
+        return fetch(event.request).catch(() => {
+           // Optional: offline fallback
+        });
       })
   );
 });

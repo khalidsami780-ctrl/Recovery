@@ -5,6 +5,7 @@ import useStore from './store/useStore';
 // Components
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
+import CheckInModal from './components/CheckInModal';
 
 // Pages
 import Onboarding from './pages/Onboarding';
@@ -20,7 +21,7 @@ import Progress from './pages/Progress';
 import { useNotifications } from './hooks/useNotifications';
 
 function AppContent() {
-  const { profile, hydrated, hydrate } = useStore();
+  const { profile, hydrated, hydrate, lastCheckin } = useStore();
   const location = useLocation();
   useNotifications();
 
@@ -29,7 +30,7 @@ function AppContent() {
   }, [hydrate]);
 
   const shouldCheckIn = () => {
-    if (!profile) return false; // Don't check-in during onboarding
+    if (!profile) return false; 
     if (!lastCheckin) return true;
     const diff = (Date.now() - new Date(lastCheckin).getTime()) / (1000 * 60 * 60 * 24);
     return diff >= 7;
@@ -43,7 +44,6 @@ function AppContent() {
     );
   }
 
-  // Redirect to onboarding if profile not set
   if (!profile && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
