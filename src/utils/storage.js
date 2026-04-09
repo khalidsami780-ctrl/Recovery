@@ -1,19 +1,22 @@
 export async function storeGet(key) {
   try {
-    const r = await window.storage.get(key);
-    return r ? JSON.parse(r.value) : null;
-  } catch (e) {
-    console.warn("Storage Get Error:", e);
-    return null;
-  }
+    if (window.storage) {
+      const r = await window.storage.get(key);
+      return r ? JSON.parse(r.value) : null;
+    }
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
 }
 
-export async function storeSet(key, val) {
+export async function storeSet(key, value) {
   try {
-    await window.storage.set(key, JSON.stringify(val));
-  } catch (e) {
-    console.warn("Storage Set Error:", e);
-  }
+    if (window.storage) {
+      await window.storage.set(key, JSON.stringify(value));
+    } else {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+  } catch {}
 }
 
 export function getTODAY() {

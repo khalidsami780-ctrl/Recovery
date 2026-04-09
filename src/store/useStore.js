@@ -14,6 +14,8 @@ const useStore = create((set, get) => ({
   measurements: [],
   prs: {},
   badges: [],
+  lastCheckin: null,
+  needsAIReview: false,
   hydrated: false,
 
   hydrate: async () => {
@@ -31,11 +33,13 @@ const useStore = create((set, get) => ({
     const measurements = await storeGet(STORAGE_KEYS.measurements) || [];
     const prs = await storeGet(STORAGE_KEYS.prs) || {};
     const badges = await storeGet(STORAGE_KEYS.badges) || [];
+    const lastCheckin = await storeGet("fd:lastCheckin");
+    const needsAIReview = await storeGet("fd:needsAIReview") || false;
 
     set({ 
       profile, log, streak, groomStreak, 
       messages: chat.length ? chat : [{ role: "assistant", content: "Dodo! 💪\nأنا مدربك الشخصي AI — بعرف كل حاجة عن نظامك الغذائي، تمارينك، مكملاتك، وروتين العناية بالدقن!\n\nقولي اتمرنت أو أكلت إيه النهارده، أو سألني عن روتين الديرما رولر والزيت — وأنا هساعدك في كل حاجة! 🔥" }], 
-      groomLog, dermaWeekDays, weights, measurements, prs, badges,
+      groomLog, dermaWeekDays, weights, measurements, prs, badges, lastCheckin, needsAIReview,
       hydrated: true 
     });
   },
@@ -133,11 +137,34 @@ const useStore = create((set, get) => ({
     await storeSet(STORAGE_KEYS.weights, updated);
   },
 
-  addMeasurement: async (m) => {
-    const { measurements } = get();
-    const updated = [...measurements, { ...m, date: getTODAY() }];
-    set({ measurements: updated });
-    await storeSet(STORAGE_KEYS.measurements, updated);
+  performCheckIn: async (weight, chest, arm, waist) => {
+    const now = new Date().toISOString();
+    const { profile, measurements } = get();
+    const lastM = measurements[measurements.length - 1];
+    
+    const newEntry = { date: now, weight, chest, arm, waist };
+    const delta = lastM ? weight - lastM.weight : 0;
+    
+    const newProfile = { ...profile, weight };
+    const newMeasurements = [...measurements, newEntry];
+    
+    set({ 
+      profile: newProfile, 
+      measurements: newMeasurements, 
+      lastCheckin: now, 
+      needsAIReview: true,
+      checkinDelta: delta
+    });
+
+    await storeSet(STORAGE_KEYS.profile, newProfile);
+    await storeSet(STORAGE_KEYS.measurements, newMeasurements);
+    await storeSet("fd:lastCheckin", now);
+    await storeSet("fd:needsAIReview", true);
+  },
+
+  setAIReviewDone: async () => {
+    set({ needsAIReview: false });
+    await storeSet("fd:needsAIReview", false);
   },
 
   setPR: async (exercise, weight, reps) => {

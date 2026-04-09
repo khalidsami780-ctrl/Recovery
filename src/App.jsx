@@ -28,6 +28,13 @@ function AppContent() {
     hydrate();
   }, [hydrate]);
 
+  const shouldCheckIn = () => {
+    if (!profile) return false; // Don't check-in during onboarding
+    if (!lastCheckin) return true;
+    const diff = (Date.now() - new Date(lastCheckin).getTime()) / (1000 * 60 * 60 * 24);
+    return diff >= 7;
+  };
+
   if (!hydrated) {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#06090f' }}>
@@ -42,10 +49,12 @@ function AppContent() {
   }
 
   const showNav = location.pathname !== '/onboarding';
+  const showCheckIn = shouldCheckIn();
 
   return (
     <div className="app-container">
       {showNav && <Header />}
+      {showCheckIn && <CheckInModal />}
       <div style={{ paddingBottom: showNav ? '85px' : '0' }}>
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />

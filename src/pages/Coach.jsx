@@ -5,7 +5,7 @@ import { calcNeeds } from '../utils/calc';
 import YoutubeCard from '../components/YoutubeCard';
 
 export default function Coach() {
-  const { profile, log, groomLog, streak, groomStreak, messages, addMessage, dermaWeekDays } = useStore();
+  const { profile, log, groomLog, streak, groomStreak, messages, addMessage, dermaWeekDays, needsAIReview, setAIReviewDone } = useStore();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const msgEnd = useRef(null);
@@ -13,6 +13,46 @@ export default function Coach() {
   useEffect(() => {
     msgEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  const isSendingRef = useRef(false);
+
+  useEffect(() => {
+    if (needsAIReview && profile?.weight && !loading && !isSendingRef.current) {
+      isSendingRef.current = true;
+      const triggerAutoReview = async () => {
+        const text = `وزني اتغير لـ ${profile.weight}kg. راجع خطتي وقولي إيه لازم يتغير وإيه تمام.`;
+        // Simulate normal send flow
+        const userMsg = { role: "user", content: text };
+        addMessage(userMsg);
+        setAIReviewDone(); // Reset flag immediately
+        setLoading(true);
+        
+        try {
+          const url = import.meta.env.DEV ? '/api/claude' : 'https://api.anthropic.com/v1/messages';
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 1000,
+              system: assembleSystemPrompt(),
+              messages: [...messages.slice(-10), userMsg].map(m => ({ role: m.role, content: m.content })),
+            }),
+          });
+          const data = await res.json();
+          const reply = data.content?.[0]?.text || "معلش يا دودو، حصل مشكلة في السيرفر. جرب تاني!";
+          const exercises = detectExercises(reply);
+          addMessage({ role: "assistant", content: reply, exercises });
+        } catch (e) {
+          addMessage({ role: "assistant", content: "في مشكلة في الاتصال حالياً. اتأكد من النت وجرب تاني 💪" });
+        }
+        setLoading(false);
+        isSendingRef.current = false;
+      };
+      
+      triggerAutoReview();
+    }
+  }, [needsAIReview, profile?.weight, hydrated]);
 
   const assembleSystemPrompt = () => {
     const needs = profile ? calcNeeds(profile.weight, profile.height, profile.age, profile.goal) : {};
@@ -74,8 +114,12 @@ ${ctx}
     setInput("");
     setLoading(true);
 
+    const url = import.meta.env.DEV
+      ? '/api/claude'
+      : 'https://api.anthropic.com/v1/messages';
+
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
