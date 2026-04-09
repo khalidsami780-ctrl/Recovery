@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fitdodo-cache-v1';
+const CACHE_NAME = 'fitdodo-v2';
 const urlsToCache = [
   '/',
   '/index.html',

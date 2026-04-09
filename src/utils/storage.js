@@ -2,19 +2,35 @@ export async function storeGet(key) {
   try {
     if (window.storage) {
       const r = await window.storage.get(key);
-      return r ? JSON.parse(r.value) : null;
+      if (!r || !r.value) return null;
+      try {
+        return JSON.parse(r.value);
+      } catch {
+        return null;
+      }
     }
+
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
+    if (!raw) return null;
+
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  } catch {
+    return null;
+  }
 }
 
 export async function storeSet(key, value) {
   try {
+    const safe = JSON.stringify(value ?? null);
+
     if (window.storage) {
-      await window.storage.set(key, JSON.stringify(value));
+      await window.storage.set(key, safe);
     } else {
-      localStorage.setItem(key, JSON.stringify(value));
+      localStorage.setItem(key, safe);
     }
   } catch {}
 }

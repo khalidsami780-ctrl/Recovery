@@ -4,7 +4,7 @@ import { THEME } from '../utils/constants';
 import { WeightChart, StreakCalendar } from '../components/Charts';
 
 export default function Progress() {
-  const { weights, addWeight, streak, groomStreak, logs } = useStore();
+  const { weights, addWeight, streak, groomStreak, measurements, addMeasurement } = useStore();
   const [newWeight, setNewWeight] = useState("");
 
   const handleAddWeight = () => {
@@ -81,9 +81,9 @@ export default function Progress() {
           حفظ القياسات
         </button>
 
-        {measurements.length > 0 && (
+        {measurements && measurements.length > 0 ? (
           <div style={{ marginTop: 20 }}>
-            {measurements.slice(-3).reverse().map((m, i, arr) => {
+            {[...measurements].reverse().slice(0, 3).map((m, i, arr) => {
               const prev = measurements[measurements.indexOf(m) - 1];
               return (
                 <div key={i} style={{ padding: '12px 0', borderBottom: i < arr.length - 1 ? `1px solid ${THEME.border}` : 'none' }}>
@@ -94,13 +94,15 @@ export default function Progress() {
                     {[
                       { l: 'صدر', k: 'chest' }, { l: 'ذراع', k: 'arm' }, { l: 'خصر', k: 'waist' }
                     ].map(field => {
-                      const delta = prev ? m[field.k] - prev[field.k] : 0;
+                      const val = m[field.k] || 0;
+                      const prevVal = prev ? prev[field.k] : 0;
+                      const delta = prevVal ? val - prevVal : 0;
                       return (
                         <div key={field.k} style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: 14, fontWeight: 800 }}>{m[field.k]}cm</div>
+                          <div style={{ fontSize: 14, fontWeight: 800 }}>{val}cm</div>
                           {delta !== 0 && (
                             <div style={{ fontSize: 10, color: delta > 0 ? THEME.green : THEME.red, fontWeight: 700 }}>
-                              {delta > 0 ? '+' : ''}{delta}cm
+                              {delta > 0 ? '+' : ''}{delta.toFixed(1)}cm
                             </div>
                           )}
                         </div>
@@ -110,6 +112,10 @@ export default function Progress() {
                 </div>
               );
             })}
+          </div>
+        ) : (
+          <div style={{ padding: '20px', textAlign: 'center', fontSize: 12, color: THEME.muted }}>
+            لا يوجد قياسات مسجلة بعد.
           </div>
         )}
       </div>
